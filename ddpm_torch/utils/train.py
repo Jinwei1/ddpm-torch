@@ -120,6 +120,7 @@ class Trainer:
                 self.ema = EMA(model, decay=ema_decay)
         else:
             self.ema = nullcontext()
+            # self.ema = False
 
         self.stats = RunningStatistics(loss=None)
 
@@ -200,13 +201,13 @@ class Trainer:
                     if self.dry_run and not global_steps % self.num_accum:
                         break
 
-            if not (e + 1) % self.image_intv and self.num_save_images and image_dir:
+            if not (e) % self.image_intv and self.num_save_images and image_dir:
                 self.model.eval()
                 x = self.sample_fn(sample_size=self.num_save_images, sample_seed=self.sample_seed).cpu()
                 if self.is_leader:
                     save_image(x, os.path.join(image_dir, f"{e + 1}.jpg"), nrow=nrow)
 
-            if not (e + 1) % self.chkpt_intv and chkpt_path:
+            if not (e) % self.chkpt_intv and chkpt_path:
                 self.model.eval()
                 if evaluator is not None:
                     eval_results = evaluator.eval(self.sample_fn, is_leader=self.is_leader)

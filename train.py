@@ -10,7 +10,7 @@ from torch.optim import Adam, lr_scheduler
 import torch.distributed as dist
 import torch.multiprocessing as mp
 from torch.nn.parallel import DistributedDataParallel as DDP
-from torch.distributed.elastic.multiprocessing import errors
+# from torch.distributed.elastic.multiprocessing import errors
 
 
 def train(rank=0, args=None, temp_dir=""):
@@ -41,6 +41,7 @@ def train(rank=0, args=None, temp_dir=""):
         k: gettr(k)
         for k in ("batch_size", "beta1", "beta2", "lr", "epochs", "grad_norm", "warmup")
     })
+    print(train_configs)
     train_configs.batch_size //= args.num_accum
     train_device = torch.device(args.train_device)
     eval_device = torch.device(args.eval_device)
@@ -239,7 +240,7 @@ def train(rank=0, args=None, temp_dir=""):
     trainer.train(evaluator, chkpt_path=chkpt_path, image_dir=image_dir)
 
 
-@errors.record
+# @errors.record
 def main():
     from argparse import ArgumentParser
 
