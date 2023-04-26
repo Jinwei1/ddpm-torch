@@ -104,9 +104,10 @@ class GaussianDiffusion:
         posterior_logvar = self._extract(self.posterior_logvar_clipped, t, x_0)
         return posterior_mean, posterior_var, posterior_logvar
 
-    def p_mean_var(self, denoise_fn, x_t, t, clip_denoised, return_pred):
+    def p_mean_var(self, denoise_fn, x_t,cond,t, clip_denoised, return_pred):
         B, C, H, W = x_t.shape
-        out = denoise_fn(x_t, t)
+        # print("x_t shape",x_t.shape," cond shape",cond.shape)
+        out = denoise_fn(torch.cat([x_t, cond],dim=1), t)
 
         if self.model_var_type == "learned":
             assert all(out.shape == (B, 2 * C, H, W))
@@ -149,16 +150,16 @@ class GaussianDiffusion:
 
     # === sample ===
 
-    def p_sample_step(self, denoise_fn, x_t, t, clip_denoised=True, return_pred=False, generator=None):
+    def p_sample_step(self, denoise_fn, x_t,cond, t, clip_denoised=True, return_pred=False, generator=None):
         model_mean, _, model_logvar, pred_x_0 = self.p_mean_var(
-            denoise_fn, x_t, t, clip_denoised=clip_denoised, return_pred=True)
+            denoise_fn, x_t,cond, t, clip_denoised=clip_denoised, return_pred=True)
         noise = torch.empty_like(x_t).normal_(generator=generator)
         nonzero_mask = (t > 0).reshape((-1,) + (1,) * (x_t.ndim - 1)).to(x_t)
         sample = model_mean + nonzero_mask * torch.exp(0.5 * model_logvar) * noise
         return (sample, pred_x_0) if return_pred else sample
 
     @torch.inference_mode()
-    def p_sample(self, denoise_fn, shape=None, device=torch.device("cpu"), noise=None, seed=None):
+    def p_sample(self, denoise_fn, shape=None,cond=None, device=torch.device("cpu"), noise=None, seed=None):
         B = (shape or noise.shape)[0]
         t = torch.empty((B, ), dtype=torch.int64, device=device)
         rng = None
@@ -170,7 +171,7 @@ class GaussianDiffusion:
             x_t = noise.to(device)
         for ti in range(self.timesteps - 1, -1, -1):
             t.fill_(ti)
-            x_t = self.p_sample_step(denoise_fn, x_t, t, generator=rng)
+            x_t = self.p_sample_step(denoise_fn,x_t,cond, t, generator=rng)
         return x_t
 
     @torch.inference_mode()
@@ -214,7 +215,7 @@ class GaussianDiffusion:
         output = torch.where(t.to(kl.device) > 0, kl, decoder_nll)
         return (output, pred_x_0) if return_pred else output
 
-    def train_losses(self, denoise_fn, x_0, t, noise=None):
+    def train_losses(self, denoise_fn, x_0,cond, t, noise=None):
         if noise is None:
             noise = torch.randn_like(x_0)
         x_t = self.q_sample(x_0, t, noise=noise)
@@ -235,7 +236,7 @@ class GaussianDiffusion:
                 target = noise
             else:
                 raise NotImplementedError(self.model_mean_type)
-            model_out = denoise_fn(x_t, t)
+            model_out = denoise_fn(torch.cat([x_t, cond],dim=1) ,t)
             losses = flat_mean((target - model_out).pow(2))
         else:
             raise NotImplementedError(self.loss_type)

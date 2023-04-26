@@ -23,7 +23,8 @@ def train(rank=0, args=None, temp_dir=""):
     root = os.path.expanduser(args.root)
     dataset = args.dataset
 
-    in_channels = DATASET_INFO[dataset]["channels"]
+    # in_channels = DATASET_INFO[dataset]["channels"]
+    in_channels = 6
     image_res = DATASET_INFO[dataset]["resolution"]
     image_shape = (in_channels, ) + image_res
 
@@ -66,7 +67,8 @@ def train(rank=0, args=None, temp_dir=""):
     diffusion = GaussianDiffusion(betas=betas, **diffusion_configs)
 
     # denoise parameters
-    out_channels = 2 * in_channels if diffusion_configs.model_var_type == "learned" else in_channels
+    # out_channels = 2 * in_channels if diffusion_configs.model_var_type == "learned" else in_channels
+    out_channels = 3
     model_configs = configs["denoise"]
     block_size = model_configs.pop("block_size", args.block_size)
     model_configs["in_channels"] = in_channels * block_size ** 2
@@ -245,7 +247,7 @@ def main():
     from argparse import ArgumentParser
 
     parser = ArgumentParser()
-    parser.add_argument("--dataset", choices=["mnist", "cifar10", "celeba", "celebahq"], default="cifar10")
+    parser.add_argument("--dataset", choices=["mnist", "cifar10","cifar10_lle", "celeba", "celebahq"], default="cifar10")
     parser.add_argument("--root", default="~/datasets", type=str, help="root directory of datasets")
     parser.add_argument("--epochs", default=50, type=int, help="total number of training epochs")
     parser.add_argument("--lr", default=0.0002, type=float, help="learning rate")

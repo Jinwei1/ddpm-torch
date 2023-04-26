@@ -1,0 +1,1 @@
+python train.py --dataset cifar10 --chkpt-name ddpm_lle_cifar10.pt --root ../lle_diffusion/dataset 

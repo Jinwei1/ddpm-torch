@@ -1,13 +1,13 @@
 {
   "train": {
     "lr": 2e-4,
-    "batch_size": 256,
+    "batch_size": 128,
     "grad_norm": 1.0,
     "epochs": 2180,
     "warmup": 5000
   },
   "denoise": {
-    "in_channels": 6,
+    "in_channels": 3,
     "hid_channels": 128,
     "ch_multipliers": [
       1,
