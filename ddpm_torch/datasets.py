@@ -1,10 +1,12 @@
 import re
 import os
+import random
 import csv
 import PIL
 import torch
 import numpy as np
 from torchvision import transforms, datasets as tvds
+import torchvision.transforms.functional as TF
 from torch.utils.data import DataLoader, Subset, Sampler
 from torch.utils.data.distributed import DistributedSampler
 from collections import namedtuple
@@ -24,6 +26,54 @@ def register_dataset(cls):
     DATASET_INFO[name] = info
     return cls
 
+@register_dataset
+class LOL(tvds.VisionDataset):
+    """
+    
+    """  # noqa
+    base_folder = "LOLdataset"
+    resolution = (64, 64)
+    channels = 3
+    transform = transforms.Compose([
+        # transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+        transforms.Resize((64,64)),
+        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+    ])
+    _transform = transforms.PILToTensor()
+    all_size = 485
+
+    def __init__(
+            self,
+            root,
+            train,
+            transform=None,
+    ):
+        super().__init__(root, transform=transform or self._transform)
+        self.dir = "our485" if train else "eval15"
+        self.filename = sorted([
+            fname
+            for fname in os.listdir(os.path.join(root, self.base_folder, self.dir,"high"))
+            if fname.endswith(".png")
+        ], key=lambda name: int(name[:-4].zfill(5)))
+        np.random.RandomState(123).shuffle(self.filename)  # legacy order used by ProGAN
+
+    def __getitem__(self, index):
+        im_high = PIL.Image.open(os.path.join(  # noqa
+            self.root, self.base_folder, self.dir,"high", self.filename[index]))
+        im_low =  PIL.Image.open(os.path.join(  # noqa
+            self.root, self.base_folder, self.dir,"low", self.filename[index]))
+        if self.transform is not None:
+            im_high = self.transform(im_high)
+            im_low = self.transform(im_low)
+            if random.random() > 0.5:
+                im_high = TF.hflip(im_high)
+                im_low  = TF.hflip(im_low)
+        return im_high, im_low
+
+    def __len__(self):
+        return len(self.filename)
+    
 
 @register_dataset
 class MNIST(tvds.MNIST):
@@ -224,6 +274,7 @@ def get_dataloader(
 ):
     assert isinstance(val_size, float) and 0 <= val_size < 1
 
+    
     name, dataset = dataset, DATASET_DICT[dataset]
     transform = dataset.transform
     if distributed:
@@ -233,6 +284,8 @@ def get_dataloader(
         data_kwargs["split"] = split
     elif name in {"mnist", "cifar10"}:
         data_kwargs["download"] = False
+        data_kwargs["train"] = split != "test"
+    elif name == "lol":
         data_kwargs["train"] = split != "test"
     dataset = dataset(**data_kwargs)
 

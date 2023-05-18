@@ -191,14 +191,15 @@ class Trainer:
             if isinstance(self.sampler, DistributedSampler):
                 self.sampler.set_epoch(e)
             with tqdm(self.trainloader, desc=f"{e+1}/{self.epochs} epochs", disable=not self.is_leader) as t:
-                for i, x in enumerate(t):
+                for i, data in enumerate(t):
                     # if i<194:
                     #     continue
-                    if isinstance(x, (list, tuple)):
-                        x = x[0]  # exclude labels; unconditional model
-                        cond = 0.10 + 0.05 * torch.rand(x.shape[0],1,1,1)
-
-                        cond = cond * x.clone().detach()
+                    if isinstance(data, (list, tuple)):
+                        x = data[0]  # exclude labels; unconditional model
+                        # cond = 0.03 + 0.05 * torch.rand(x.shape[0],1,1,1)
+                        # cond = cond * x.clone().detach()
+                        cond = data[1]
+                        # print(x.shape,cond.shape)
                     global_steps += 1
                     self.step(x.to(self.device),cond.to(self.device), global_steps=global_steps)
                     t.set_postfix(self.current_stats)

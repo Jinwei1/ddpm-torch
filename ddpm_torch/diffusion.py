@@ -236,6 +236,7 @@ class GaussianDiffusion:
                 target = noise
             else:
                 raise NotImplementedError(self.model_mean_type)
+            # print(x_t.shape,cond.shape)
             model_out = denoise_fn(torch.cat([x_t, cond],dim=1) ,t)
             losses = flat_mean((target - model_out).pow(2))
         else:

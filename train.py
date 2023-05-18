@@ -25,6 +25,8 @@ def train(rank=0, args=None, temp_dir=""):
 
     # in_channels = DATASET_INFO[dataset]["channels"]
     in_channels = 6
+    print(DATASET_DICT)
+    print(DATASET_INFO)
     image_res = DATASET_INFO[dataset]["resolution"]
     image_shape = (in_channels, ) + image_res
 
@@ -247,7 +249,7 @@ def main():
     from argparse import ArgumentParser
 
     parser = ArgumentParser()
-    parser.add_argument("--dataset", choices=["mnist", "cifar10","cifar10_lle", "celeba", "celebahq"], default="cifar10")
+    parser.add_argument("--dataset", choices=["mnist", "cifar10","cifar10_lle", "celeba", "celebahq","lol"], default="cifar10")
     parser.add_argument("--root", default="~/datasets", type=str, help="root directory of datasets")
     parser.add_argument("--epochs", default=50, type=int, help="total number of training epochs")
     parser.add_argument("--lr", default=0.0002, type=float, help="learning rate")
